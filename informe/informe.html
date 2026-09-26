@@ -1,0 +1,2346 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Sofía Cadavid Rueda">
+<meta name="dcterms.date" content="2026-09-25">
+
+<title>Tarea 1 - Caja de herramientas de pronostico</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="informe_files/libs/clipboard/clipboard.min.js"></script>
+<script src="informe_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="informe_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="informe_files/libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="informe_files/libs/quarto-html/popper.min.js"></script>
+<script src="informe_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="informe_files/libs/quarto-html/anchor.min.js"></script>
+<link href="informe_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="informe_files/libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="informe_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="informe_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="informe_files/libs/bootstrap/bootstrap-9e3ffae467580fdb927a41352e75a2e0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#análisis-completo" id="toc-análisis-completo" class="nav-link active" data-scroll-target="#análisis-completo">Análisis completo</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Tarea 1 - Caja de herramientas de pronostico</h1>
+<p class="subtitle lead">Series de Tiempo, codigo 3009297</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Sofía Cadavid Rueda </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 25, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="análisis-completo" class="level1">
+<h1>Análisis completo</h1>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-10-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-1" role="tab" aria-controls="tabset-10-1" aria-selected="true" href="">Media simple</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-10-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-2" role="tab" aria-controls="tabset-10-2" aria-selected="false" href="">Media movil</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-10-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-3" role="tab" aria-controls="tabset-10-3" aria-selected="false" href="">Suavizamiento exponencial simple</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-10-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-4" role="tab" aria-controls="tabset-10-4" aria-selected="false" href="">Doble media movil</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-10-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-5" role="tab" aria-controls="tabset-10-5" aria-selected="false" href="">Tendencia lineal</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-10-6-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-6" role="tab" aria-controls="tabset-10-6" aria-selected="false" href="">Tendencia cuadratica</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-10-7-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-7" role="tab" aria-controls="tabset-10-7" aria-selected="false" href="">Tendencia exponencial</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-10-8-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-8" role="tab" aria-controls="tabset-10-8" aria-selected="false" href="">Holt lineal</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-10-9-tab" data-bs-toggle="tab" data-bs-target="#tabset-10-9" role="tab" aria-controls="tabset-10-9" aria-selected="false" href="">Contraejemplo</a></li></ul>
+<div class="tab-content">
+<div id="tabset-10-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-10-1-tab">
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Descripción/Patrón</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">Partición/Ajuste</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false" href="">Medidas/Referente</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false" href="">Validación de errores</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-5" role="tab" aria-controls="tabset-1-5" aria-selected="false" href="">Conclusión/Recomendación</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-1-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Se utilizó la serie <code>discoveries</code>, que registra el número de grandes descubrimientos científicos por año entre 1860 y 1959, con frecuencia anual (100 observaciones). En el gráfico se observa que el nivel de la serie oscila alrededor de un valor aproximadamente constante, sin tendencia sostenida a lo largo de los años. Sin embargo, en el tramo cercano a 1885 se presenta una elevación anómala comparada con el resto del período. Esto se confirma al comparar la media de la primera mitad de la muestra (3.44) con la de la segunda mitad (2.76): la diferencia es moderada y no refleja un desplazamiento sostenido del nivel, sino que está influida por ese tramo puntual.</p>
+<p>Para leer el correlograma de forma individual, el rezago <span class="math inline">\(r_1\approx
+0.27\)</span> decae rápidamente, y solo el/los rezago(s) 1, 2, 3 cruza la banda de ruido blanco de <span class="math inline">\(\pm 0.196\)</span> (<span class="math inline">\(\pm1{,}96/\sqrt{100}\)</span>), sin ningún patrón sistemático de decaimiento lento ni picos periódicos.</p>
+<p>Esa lectura se confirma con una prueba conjunta. <span class="math inline">\(H_0:
+\rho_1=\dots=\rho_{24}=0\)</span> (la serie no tiene autocorrelación conjunta hasta el rezago 24) contra <span class="math inline">\(H_1\)</span>: al menos un <span class="math inline">\(\rho_h\neq0\)</span>. El estadístico es <span class="math inline">\(Q_m=T(T+2)\sum_{h=1}^{m}
+r_h^2/(T-h)\sim\chi^2_m\)</span> bajo <span class="math inline">\(H_0\)</span> (aquí <span class="math inline">\(p=0\)</span> porque la prueba se aplica a la serie, antes de ajustar cualquier método). Ljung-Box sobre la serie: estadístico observado = 36.254 (<span class="math inline">\(gl=24\)</span>), valor crítico (5%) = 36.415, valor p = 0.052. no se rechaza <span class="math inline">\(H_0\)</span>. En términos de la serie, esto indica que, tomada en conjunto, no hay evidencia de dependencia lineal más allá de lo esperado por azar. En conjunto, la evidencia visual y la prueba formal confirman que la serie es estacionaria en media.</p>
+<p>Esta serie es adecuada para el método de media simple, ya que este método utiliza toda la historia disponible hasta el momento, asignando un mismo peso a cada dato: el pronóstico en <span class="math inline">\(t+1\)</span> es el promedio acumulado de todo lo observado hasta <span class="math inline">\(t\)</span>. Como <code>discoveries</code> no presenta tendencia ni estacionalidad, y su nivel es aproximadamente constante, el supuesto detrás de la media simple (<span class="math inline">\(Y_t = \beta_0 + \varepsilon_t\)</span>) es razonable para esta serie.</p>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">h</th>
+<th style="text-align: center;">fecha</th>
+<th style="text-align: center;">y_real</th>
+<th style="text-align: center;">y_pronosticado</th>
+<th style="text-align: center;">error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1948-01-01</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">0.69</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1949-01-01</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">-0.31</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">1950-01-01</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">-1.31</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">1951-01-01</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">-2.31</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">1952-01-01</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">0.69</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">1953-01-01</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">-2.31</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">1954-01-01</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">-2.31</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">1955-01-01</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">-2.31</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">1956-01-01</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">-3.31</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1957-01-01</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">-3.31</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">11</td>
+<td style="text-align: center;">1958-01-01</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">-1.31</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">12</td>
+<td style="text-align: center;">1959-01-01</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">3.31</td>
+<td style="text-align: center;">-3.31</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Con <span class="math inline">\(T=100\)</span>, la regla <span class="math inline">\(h=\min\{12,\lfloor0{,}2\,T\rfloor\}\)</span> da <span class="math inline">\(h=12\)</span>. La fecha de corte fue 1947, dejando 88 años para el tramo de estimación (1860-1947) y 12 años para el tramo de validación (1948-1959). Como se observa en la tabla, <code>y_pronosticado</code> es el mismo valor en los 12 años del horizonte. Esto es natural en este método, ya que el pronóstico de la media simple es <span class="math inline">\(\hat{Y}_{T+h}=\bar{Y}\)</span> para todo horizonte <span class="math inline">\(h\)</span>: no depende de cuántos años adelante se pronostique, siempre es la misma media calculada sobre el tramo de estimación. Además, en la columna de error se observa que 10 de los 12 años tienen error negativo, es decir, el valor real quedó por debajo de lo que predijo el promedio histórico; esto sugiere que el nivel del tramo de validación fue más bajo que el nivel promedio del tramo de estimación. El o los único(s) año(s) con error positivo fue(ron): 1948, 1952.</p>
+</div>
+<div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Método</th>
+<th style="text-align: center;">MSE</th>
+<th style="text-align: center;">MAD</th>
+<th style="text-align: center;">MAPE</th>
+<th style="text-align: center;">MASE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Media simple</td>
+<td style="text-align: center;">4.88</td>
+<td style="text-align: center;">1.955</td>
+<td style="text-align: center;">Inf</td>
+<td style="text-align: center;">0.919</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ingenuo simple</td>
+<td style="text-align: center;">7.75</td>
+<td style="text-align: center;">2.417</td>
+<td style="text-align: center;">Inf</td>
+<td style="text-align: center;">1.136</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Dados los resultados de la tabla, en las métricas comparables (MSE, MAD y MASE) la media simple obtiene un error menor que el ingenuo simple. En particular, el MASE de la media simple es 0.919 y el del ingenuo es 1.136: según la regla de la Clase 3, un MASE mayor a 1 significa que el método produjo un error peor que el del referente más simple posible. Esto conecta con el análisis anterior, donde 10 de los 12 errores de validación fueron negativos: a pesar de usar 88 años de historia, la media simple logró adaptarse a la caída de nivel del tramo final. El MAPE no se pudo comparar porque el tramo de validación contiene ceros, donde la medida queda indefinida.</p>
+</div>
+<div id="tabset-1-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-4-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 11%">
+<col style="width: 3%">
+<col style="width: 17%">
+<col style="width: 7%">
+<col style="width: 45%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Prueba</th>
+<th style="text-align: center;">Estadístico</th>
+<th style="text-align: center;">gl</th>
+<th style="text-align: center;">Valor crítico (5%)</th>
+<th style="text-align: center;">Valor p</th>
+<th style="text-align: center;">Decisión</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">t (media cero)</td>
+<td style="text-align: center;">0.194</td>
+<td style="text-align: center;">86</td>
+<td style="text-align: center;">1.988</td>
+<td style="text-align: center;">0.846</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ljung-Box</td>
+<td style="text-align: center;">27.643</td>
+<td style="text-align: center;">20</td>
+<td style="text-align: center;">31.410</td>
+<td style="text-align: center;">0.118</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Jarque-Bera</td>
+<td style="text-align: center;">41.267</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">5.991</td>
+<td style="text-align: center;">&lt; 0.001</td>
+<td style="text-align: center;">se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Durbin-Watson</td>
+<td style="text-align: center;">1.504</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">referencia visual (sin cotas dL/dU tabuladas aquí)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Sobre los residuos de estimación de la media simple se contrastan tres supuestos, cada uno con sus seis elementos.</p>
+<p>Media cero: <span class="math inline">\(H_0:E(e_t)=0\)</span> vs.&nbsp;<span class="math inline">\(H_1:E(e_t)\neq0\)</span>. Prueba t: estadístico observado = 0.194 (<span class="math inline">\(gl=86\)</span>), valor crítico (5%) = 1.988, valor p = 0.846. no se rechaza <span class="math inline">\(H_0\)</span>. En términos del método, esto dice que los pronósticos de la media simple no están sesgados de forma sistemática en el tramo de estimación.</p>
+<p>Ausencia de autocorrelación: <span class="math inline">\(H_0:\rho_1=\dots=\rho_{21}=0\)</span> vs. <span class="math inline">\(H_1\)</span>: alguno distinto de cero, con <span class="math inline">\(gl=m-p=20\)</span> porque la media simple estima <span class="math inline">\(p=1\)</span> parámetro (<span class="math inline">\(\beta_0\)</span>). Ljung-Box sobre los residuos: estadístico observado = 27.643 (<span class="math inline">\(gl=20\)</span>), valor crítico (5%) = 31.410, valor p = 0.118. no se rechaza <span class="math inline">\(H_0\)</span>. Esto es coherente con el correlograma de errores: ningún rezago cruza claramente la banda de significancia, es decir, el método no dejó estructura lineal explotable en los residuos de estimación.</p>
+<p>Normalidad: <span class="math inline">\(H_0\)</span>: los residuos provienen de una distribución normal (asimetría 0, curtosis 3) vs.&nbsp;<span class="math inline">\(H_1\)</span>: no. Jarque-Bera: estadístico observado = 41.267 (<span class="math inline">\(gl=2\)</span>), valor crítico (5%) = 5.991, valor p = &lt; 0.001. se <strong>rechaza</strong> <span class="math inline">\(H_0\)</span>. con asimetría 1.23 y curtosis 5.31 sobre 87 errores. El gráfico de errores en el tiempo muestra la causa más probable: un valor atípico grande cerca del tramo elevado de mediados de 1880 identificado desde la descripción de la serie, que por sí solo puede romper el supuesto de normalidad sin generar autocorrelación ni sesgo sistemático en el resto de la muestra (<span class="math inline">\(d=1.50\)</span>, próximo a 2).</p>
+</div>
+<div id="tabset-1-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-5-tab">
+
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-10-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-10-2-tab">
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true" href="">Descripción/Patrón</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false" href="">Partición/Ajuste</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-3" role="tab" aria-controls="tabset-2-3" aria-selected="false" href="">Medida/Referente</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-4" role="tab" aria-controls="tabset-2-4" aria-selected="false" href="">Validación de errores</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-5" role="tab" aria-controls="tabset-2-5" aria-selected="false" href="">Conclusión/Recomendación</a></li></ul>
+<div class="tab-content">
+<div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Se reutilizó la serie <code>discoveries</code>. Como se observa en el correlograma, no hay un patrón de tendencia, sino un decaimiento rápido que tarda unos pocos rezagos más en apagarse que en el ejemplo anterior: <span class="math inline">\(r_1=0.274\)</span>, <span class="math inline">\(r_2=0.252\)</span> y <span class="math inline">\(r_3=0.231\)</span> salen de la banda de <span class="math inline">\(\pm0.196\)</span>, y solo desde <span class="math inline">\(r_4=0.119\)</span> la serie entra en la banda. La prueba de Ljung-Box confirma que esa estructura es débil: <span class="math inline">\(Q_{24}=36.25\)</span> frente a un crítico de 36.42 (<span class="math inline">\(p=0.052\)</span>), por lo que no se rechaza <span class="math inline">\(H_0\)</span>, pero por un margen muy estrecho. Esto sirve también para la media móvil: la media simple pondera por igual toda la historia y no aprovecha la dependencia de corto plazo que muestran <span class="math inline">\(r_1\)</span> a <span class="math inline">\(r_3\)</span>; la media móvil, al construirse solo con las últimas <span class="math inline">\(k\)</span> observaciones, sí puede seguir esa dependencia reciente, aunque a costa de perder la eficiencia de usar toda la muestra.</p>
+</div>
+<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">h</th>
+<th style="text-align: center;">fecha</th>
+<th style="text-align: center;">y_real</th>
+<th style="text-align: center;">y_pronosticado</th>
+<th style="text-align: center;">error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1948-01-01</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1949-01-01</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">1950-01-01</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">1951-01-01</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">-1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">1952-01-01</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">1953-01-01</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">-1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">1954-01-01</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">-1</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">1955-01-01</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">-1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">1956-01-01</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">-2</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1957-01-01</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">-2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">11</td>
+<td style="text-align: center;">1958-01-01</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">12</td>
+<td style="text-align: center;">1959-01-01</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">-2</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">k</th>
+<th style="text-align: center;">MSE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">6.076</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">5.382</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">5.414</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">5.458</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">5.567</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">5.399</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">5.309</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">5.157</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">5.310</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">11</td>
+<td style="text-align: center;">5.300</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">12</td>
+<td style="text-align: center;">5.442</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">k</th>
+<th style="text-align: right;">MSE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">5.156743</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] FALSE</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-2-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-3-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Método</th>
+<th style="text-align: center;">MSE</th>
+<th style="text-align: center;">MAD</th>
+<th style="text-align: center;">MAPE</th>
+<th style="text-align: center;">MASE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Media movil</td>
+<td style="text-align: center;">2.083</td>
+<td style="text-align: center;">1.250</td>
+<td style="text-align: center;">Inf</td>
+<td style="text-align: center;">0.588</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ingenuo simple</td>
+<td style="text-align: center;">7.750</td>
+<td style="text-align: center;">2.417</td>
+<td style="text-align: center;">Inf</td>
+<td style="text-align: center;">1.136</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tabset-2-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-4-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 11%">
+<col style="width: 3%">
+<col style="width: 17%">
+<col style="width: 7%">
+<col style="width: 45%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Prueba</th>
+<th style="text-align: center;">Estadístico</th>
+<th style="text-align: center;">gl</th>
+<th style="text-align: center;">Valor crítico (5%)</th>
+<th style="text-align: center;">Valor p</th>
+<th style="text-align: center;">Decisión</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">t (media cero)</td>
+<td style="text-align: center;">-0.230</td>
+<td style="text-align: center;">78</td>
+<td style="text-align: center;">1.991</td>
+<td style="text-align: center;">0.819</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ljung-Box</td>
+<td style="text-align: center;">17.005</td>
+<td style="text-align: center;">18</td>
+<td style="text-align: center;">28.869</td>
+<td style="text-align: center;">0.523</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Jarque-Bera</td>
+<td style="text-align: center;">22.548</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">5.991</td>
+<td style="text-align: center;">&lt; 0.001</td>
+<td style="text-align: center;">se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Durbin-Watson</td>
+<td style="text-align: center;">1.684</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">referencia visual (sin cotas dL/dU tabuladas aquí)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tabset-2-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-5-tab">
+
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-10-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-10-3-tab">
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-3-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-1" role="tab" aria-controls="tabset-3-1" aria-selected="true" href="">Descripción/Patrón</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-3-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-2" role="tab" aria-controls="tabset-3-2" aria-selected="false" href="">Partición/Ajuste</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-3-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-3" role="tab" aria-controls="tabset-3-3" aria-selected="false" href="">Medidas/Referente</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-3-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-4" role="tab" aria-controls="tabset-3-4" aria-selected="false" href="">Validación de errores</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-3-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-5" role="tab" aria-controls="tabset-3-5" aria-selected="false" href="">Conclusión/Recomendación</a></li></ul>
+<div class="tab-content">
+<div id="tabset-3-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-3-1-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-3-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-2-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">h</th>
+<th style="text-align: center;">fecha</th>
+<th style="text-align: center;">y_real</th>
+<th style="text-align: center;">y_pronosticado</th>
+<th style="text-align: center;">error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1961-01-01</td>
+<td style="text-align: center;">578.25</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">-0.81</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1962-01-01</td>
+<td style="text-align: center;">577.91</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">-1.15</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">1963-01-01</td>
+<td style="text-align: center;">576.89</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">-2.17</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">1964-01-01</td>
+<td style="text-align: center;">575.96</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">-3.10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">1965-01-01</td>
+<td style="text-align: center;">576.80</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">-2.26</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">1966-01-01</td>
+<td style="text-align: center;">577.68</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">-1.38</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">1967-01-01</td>
+<td style="text-align: center;">578.38</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">-0.68</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">1968-01-01</td>
+<td style="text-align: center;">578.52</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">-0.54</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">1969-01-01</td>
+<td style="text-align: center;">579.74</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">0.68</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1970-01-01</td>
+<td style="text-align: center;">579.31</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">0.25</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">11</td>
+<td style="text-align: center;">1971-01-01</td>
+<td style="text-align: center;">579.89</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">0.83</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">12</td>
+<td style="text-align: center;">1972-01-01</td>
+<td style="text-align: center;">579.96</td>
+<td style="text-align: center;">579.06</td>
+<td style="text-align: center;">0.90</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">alpha</th>
+<th style="text-align: right;">MSE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.98</td>
+<td style="text-align: right;">0.5577592</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-3-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-3-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Método</th>
+<th style="text-align: center;">MSE</th>
+<th style="text-align: center;">MAD</th>
+<th style="text-align: center;">MAPE</th>
+<th style="text-align: center;">MASE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">SES</td>
+<td style="text-align: center;">2.175</td>
+<td style="text-align: center;">1.229</td>
+<td style="text-align: center;">0.21</td>
+<td style="text-align: center;">2.141</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ingenuo simple</td>
+<td style="text-align: center;">2.238</td>
+<td style="text-align: center;">1.243</td>
+<td style="text-align: center;">0.22</td>
+<td style="text-align: center;">2.164</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tabset-3-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-4-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 11%">
+<col style="width: 3%">
+<col style="width: 17%">
+<col style="width: 7%">
+<col style="width: 45%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Prueba</th>
+<th style="text-align: center;">Estadístico</th>
+<th style="text-align: center;">gl</th>
+<th style="text-align: center;">Valor crítico (5%)</th>
+<th style="text-align: center;">Valor p</th>
+<th style="text-align: center;">Decisión</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">t (media cero)</td>
+<td style="text-align: center;">-0.194</td>
+<td style="text-align: center;">84</td>
+<td style="text-align: center;">1.989</td>
+<td style="text-align: center;">0.846</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ljung-Box</td>
+<td style="text-align: center;">27.617</td>
+<td style="text-align: center;">20</td>
+<td style="text-align: center;">31.410</td>
+<td style="text-align: center;">0.119</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Jarque-Bera</td>
+<td style="text-align: center;">2.720</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">5.991</td>
+<td style="text-align: center;">0.257</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Durbin-Watson</td>
+<td style="text-align: center;">1.546</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">referencia visual (sin cotas dL/dU tabuladas aquí)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tabset-3-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-5-tab">
+
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-10-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-10-4-tab">
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-4-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-1" role="tab" aria-controls="tabset-4-1" aria-selected="true" href="">Descripción/Patrón</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-2" role="tab" aria-controls="tabset-4-2" aria-selected="false" href="">Partición/Ajuste</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-3" role="tab" aria-controls="tabset-4-3" aria-selected="false" href="">Medidas/Referente</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-4" role="tab" aria-controls="tabset-4-4" aria-selected="false" href="">Validación de errores</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-5" role="tab" aria-controls="tabset-4-5" aria-selected="false" href="">Conclusión/Recomendación</a></li></ul>
+<div class="tab-content">
+<div id="tabset-4-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-4-1-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">h</th>
+<th style="text-align: center;">fecha</th>
+<th style="text-align: center;">y_real</th>
+<th style="text-align: center;">y_pronosticado</th>
+<th style="text-align: center;">error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1959-01-01</td>
+<td style="text-align: center;">975</td>
+<td style="text-align: center;">907.59</td>
+<td style="text-align: center;">67.41</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1960-01-01</td>
+<td style="text-align: center;">815</td>
+<td style="text-align: center;">912.90</td>
+<td style="text-align: center;">-97.90</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">1961-01-01</td>
+<td style="text-align: center;">1020</td>
+<td style="text-align: center;">918.21</td>
+<td style="text-align: center;">101.79</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">1962-01-01</td>
+<td style="text-align: center;">906</td>
+<td style="text-align: center;">923.52</td>
+<td style="text-align: center;">-17.52</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">1963-01-01</td>
+<td style="text-align: center;">901</td>
+<td style="text-align: center;">928.83</td>
+<td style="text-align: center;">-27.83</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">1964-01-01</td>
+<td style="text-align: center;">1170</td>
+<td style="text-align: center;">934.14</td>
+<td style="text-align: center;">235.86</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">1965-01-01</td>
+<td style="text-align: center;">912</td>
+<td style="text-align: center;">939.45</td>
+<td style="text-align: center;">-27.45</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">1966-01-01</td>
+<td style="text-align: center;">746</td>
+<td style="text-align: center;">944.76</td>
+<td style="text-align: center;">-198.76</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">1967-01-01</td>
+<td style="text-align: center;">919</td>
+<td style="text-align: center;">950.07</td>
+<td style="text-align: center;">-31.07</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1968-01-01</td>
+<td style="text-align: center;">718</td>
+<td style="text-align: center;">955.38</td>
+<td style="text-align: center;">-237.38</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">11</td>
+<td style="text-align: center;">1969-01-01</td>
+<td style="text-align: center;">714</td>
+<td style="text-align: center;">960.69</td>
+<td style="text-align: center;">-246.69</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">12</td>
+<td style="text-align: center;">1970-01-01</td>
+<td style="text-align: center;">740</td>
+<td style="text-align: center;">966.00</td>
+<td style="text-align: center;">-226.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">k</th>
+<th style="text-align: right;">MSE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">27054.27</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-4-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-3-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Método</th>
+<th style="text-align: center;">MSE</th>
+<th style="text-align: center;">MAD</th>
+<th style="text-align: center;">MAPE</th>
+<th style="text-align: center;">MASE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Doble media movil</td>
+<td style="text-align: center;">24225.19</td>
+<td style="text-align: center;">126.304</td>
+<td style="text-align: center;">15.44</td>
+<td style="text-align: center;">0.951</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ingenuo simple</td>
+<td style="text-align: center;">19685.00</td>
+<td style="text-align: center;">111.000</td>
+<td style="text-align: center;">13.45</td>
+<td style="text-align: center;">0.835</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tabset-4-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-4-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 11%">
+<col style="width: 3%">
+<col style="width: 17%">
+<col style="width: 7%">
+<col style="width: 45%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Prueba</th>
+<th style="text-align: center;">Estadístico</th>
+<th style="text-align: center;">gl</th>
+<th style="text-align: center;">Valor crítico (5%)</th>
+<th style="text-align: center;">Valor p</th>
+<th style="text-align: center;">Decisión</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">t (media cero)</td>
+<td style="text-align: center;">0.081</td>
+<td style="text-align: center;">64</td>
+<td style="text-align: center;">1.998</td>
+<td style="text-align: center;">0.936</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ljung-Box</td>
+<td style="text-align: center;">36.654</td>
+<td style="text-align: center;">14</td>
+<td style="text-align: center;">23.685</td>
+<td style="text-align: center;">&lt; 0.001</td>
+<td style="text-align: center;">se rechaza</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Jarque-Bera</td>
+<td style="text-align: center;">0.057</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">5.991</td>
+<td style="text-align: center;">0.972</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Durbin-Watson</td>
+<td style="text-align: center;">1.149</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">referencia visual (sin cotas dL/dU tabuladas aquí)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tabset-4-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-5-tab">
+
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-10-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-10-5-tab">
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-5-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-1" role="tab" aria-controls="tabset-5-1" aria-selected="true" href="">Descripción/Patrón</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-2" role="tab" aria-controls="tabset-5-2" aria-selected="false" href="">Ajuste/Tabla de coeficientes</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-3" role="tab" aria-controls="tabset-5-3" aria-selected="false" href="">Revisión de supuestos</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-4" role="tab" aria-controls="tabset-5-4" aria-selected="false" href="">Medidas/Referente</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-5" role="tab" aria-controls="tabset-5-5" aria-selected="false" href="">Conclusión/Recomendación</a></li></ul>
+<div class="tab-content">
+<div id="tabset-5-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-5-1-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-5-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-2-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 17%">
+<col style="width: 22%">
+<col style="width: 11%">
+<col style="width: 18%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Término</th>
+<th style="text-align: center;">Estimación</th>
+<th style="text-align: center;">EE ordinario</th>
+<th style="text-align: center;">EE robusto (HAC)</th>
+<th style="text-align: center;">t (HAC)</th>
+<th style="text-align: center;">Valor p (HAC)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Intercepto</td>
+<td style="text-align: center;">12963.288</td>
+<td style="text-align: center;">21.958</td>
+<td style="text-align: center;">40.733</td>
+<td style="text-align: center;">318.252</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">t</td>
+<td style="text-align: center;">50.707</td>
+<td style="text-align: center;">0.489</td>
+<td style="text-align: center;">1.049</td>
+<td style="text-align: center;">48.336</td>
+<td style="text-align: center;">0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9930688</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-5-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-3-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 16%">
+<col style="width: 5%">
+<col style="width: 25%">
+<col style="width: 11%">
+<col style="width: 19%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Prueba</th>
+<th style="text-align: center;">Estadístico</th>
+<th style="text-align: center;">gl</th>
+<th style="text-align: center;">Valor crítico (5%)</th>
+<th style="text-align: center;">Valor p</th>
+<th style="text-align: center;">Decisión</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">t (media cero)</td>
+<td style="text-align: center;">-0.000</td>
+<td style="text-align: center;">76</td>
+<td style="text-align: center;">1.992</td>
+<td style="text-align: center;">1.000</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ljung-Box</td>
+<td style="text-align: center;">399.468</td>
+<td style="text-align: center;">17</td>
+<td style="text-align: center;">27.587</td>
+<td style="text-align: center;">&lt; 0.001</td>
+<td style="text-align: center;">se rechaza</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Jarque-Bera</td>
+<td style="text-align: center;">4.236</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">5.991</td>
+<td style="text-align: center;">0.120</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.01705571</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-5-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-4-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Método</th>
+<th style="text-align: center;">MSE</th>
+<th style="text-align: center;">MAD</th>
+<th style="text-align: center;">MAPE</th>
+<th style="text-align: center;">MASE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Tendencia lineal</td>
+<td style="text-align: center;">44430.96</td>
+<td style="text-align: center;">210.080</td>
+<td style="text-align: center;">1.21</td>
+<td style="text-align: center;">3.974</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ingenuo simple</td>
+<td style="text-align: center;">133004.79</td>
+<td style="text-align: center;">322.042</td>
+<td style="text-align: center;">1.84</td>
+<td style="text-align: center;">6.091</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tabset-5-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-5-tab">
+
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-10-6" class="tab-pane" role="tabpanel" aria-labelledby="tabset-10-6-tab">
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-6-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-1" role="tab" aria-controls="tabset-6-1" aria-selected="true" href="">Descripción/Patrón</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-2" role="tab" aria-controls="tabset-6-2" aria-selected="false" href="">Ajuste y tabla de coeficientes</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-3" role="tab" aria-controls="tabset-6-3" aria-selected="false" href="">Revisión de supuestos</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-4" role="tab" aria-controls="tabset-6-4" aria-selected="false" href="">Medidas/Referente</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-5" role="tab" aria-controls="tabset-6-5" aria-selected="false" href="">Conclusión/Recomendación</a></li></ul>
+<div class="tab-content">
+<div id="tabset-6-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-6-1-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-6-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-2-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 17%">
+<col style="width: 22%">
+<col style="width: 11%">
+<col style="width: 18%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Término</th>
+<th style="text-align: center;">Estimación</th>
+<th style="text-align: center;">EE ordinario</th>
+<th style="text-align: center;">EE robusto (HAC)</th>
+<th style="text-align: center;">t (HAC)</th>
+<th style="text-align: center;">Valor p (HAC)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Intercepto</td>
+<td style="text-align: center;">314.860</td>
+<td style="text-align: center;">0.306</td>
+<td style="text-align: center;">0.461</td>
+<td style="text-align: center;">683.213</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">t</td>
+<td style="text-align: center;">0.066</td>
+<td style="text-align: center;">0.003</td>
+<td style="text-align: center;">0.005</td>
+<td style="text-align: center;">13.444</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">t2</td>
+<td style="text-align: center;">0.000</td>
+<td style="text-align: center;">0.000</td>
+<td style="text-align: center;">0.000</td>
+<td style="text-align: center;">8.680</td>
+<td style="text-align: center;">0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9776819</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-6-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-3-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 16%">
+<col style="width: 6%">
+<col style="width: 25%">
+<col style="width: 11%">
+<col style="width: 19%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Prueba</th>
+<th style="text-align: center;">Estadístico</th>
+<th style="text-align: center;">gl</th>
+<th style="text-align: center;">Valor crítico (5%)</th>
+<th style="text-align: center;">Valor p</th>
+<th style="text-align: center;">Decisión</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">t (media cero)</td>
+<td style="text-align: center;">-0.000</td>
+<td style="text-align: center;">455</td>
+<td style="text-align: center;">1.965</td>
+<td style="text-align: center;">1.000</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ljung-Box</td>
+<td style="text-align: center;">3783.561</td>
+<td style="text-align: center;">21</td>
+<td style="text-align: center;">32.671</td>
+<td style="text-align: center;">&lt; 0.001</td>
+<td style="text-align: center;">se rechaza</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Jarque-Bera</td>
+<td style="text-align: center;">18.297</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">5.991</td>
+<td style="text-align: center;">&lt; 0.001</td>
+<td style="text-align: center;">se rechaza</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.3064934</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-6-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-4-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Método</th>
+<th style="text-align: center;">MSE</th>
+<th style="text-align: center;">MAD</th>
+<th style="text-align: center;">MAPE</th>
+<th style="text-align: center;">MASE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Tendencia cuadratica</td>
+<td style="text-align: center;">6.898</td>
+<td style="text-align: center;">2.040</td>
+<td style="text-align: center;">0.56</td>
+<td style="text-align: center;">1.904</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ingenuo simple</td>
+<td style="text-align: center;">5.909</td>
+<td style="text-align: center;">2.052</td>
+<td style="text-align: center;">0.56</td>
+<td style="text-align: center;">1.916</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tabset-6-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-5-tab">
+
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-10-7" class="tab-pane" role="tabpanel" aria-labelledby="tabset-10-7-tab">
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-7-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-7-1" role="tab" aria-controls="tabset-7-1" aria-selected="true" href="">Descripción/Patrón</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-7-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-7-2" role="tab" aria-controls="tabset-7-2" aria-selected="false" href="">Ajuste y tabla de coeficientes</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-7-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-7-3" role="tab" aria-controls="tabset-7-3" aria-selected="false" href="">Revisión de supuestos</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-7-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-7-4" role="tab" aria-controls="tabset-7-4" aria-selected="false" href="">Medidas/Referente</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-7-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-7-5" role="tab" aria-controls="tabset-7-5" aria-selected="false" href="">Conclusión/Recomendación</a></li></ul>
+<div class="tab-content">
+<div id="tabset-7-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-7-1-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-7-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-7-2-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 17%">
+<col style="width: 22%">
+<col style="width: 11%">
+<col style="width: 18%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Término</th>
+<th style="text-align: center;">Estimación</th>
+<th style="text-align: center;">EE ordinario</th>
+<th style="text-align: center;">EE robusto (HAC)</th>
+<th style="text-align: center;">t (HAC)</th>
+<th style="text-align: center;">Valor p (HAC)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Intercepto</td>
+<td style="text-align: center;">-0.697</td>
+<td style="text-align: center;">0.036</td>
+<td style="text-align: center;">0.043</td>
+<td style="text-align: center;">-16.366</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">t</td>
+<td style="text-align: center;">0.043</td>
+<td style="text-align: center;">0.001</td>
+<td style="text-align: center;">0.001</td>
+<td style="text-align: center;">42.962</td>
+<td style="text-align: center;">0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Intercepto 
+ 0.4981558 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       t 
+1.043697 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9727022</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-7-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-7-3-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 16%">
+<col style="width: 5%">
+<col style="width: 25%">
+<col style="width: 11%">
+<col style="width: 19%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Prueba</th>
+<th style="text-align: center;">Estadístico</th>
+<th style="text-align: center;">gl</th>
+<th style="text-align: center;">Valor crítico (5%)</th>
+<th style="text-align: center;">Valor p</th>
+<th style="text-align: center;">Decisión</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">t (media cero)</td>
+<td style="text-align: center;">-0.370</td>
+<td style="text-align: center;">71</td>
+<td style="text-align: center;">1.994</td>
+<td style="text-align: center;">0.713</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ljung-Box</td>
+<td style="text-align: center;">108.202</td>
+<td style="text-align: center;">16</td>
+<td style="text-align: center;">26.296</td>
+<td style="text-align: center;">&lt; 0.001</td>
+<td style="text-align: center;">se rechaza</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Jarque-Bera</td>
+<td style="text-align: center;">135.089</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">5.991</td>
+<td style="text-align: center;">&lt; 0.001</td>
+<td style="text-align: center;">se rechaza</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1.689839</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-7-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-7-4-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Método</th>
+<th style="text-align: center;">MSE</th>
+<th style="text-align: center;">MAD</th>
+<th style="text-align: center;">MAPE</th>
+<th style="text-align: center;">MASE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Tendencia exponencial</td>
+<td style="text-align: center;">8.329</td>
+<td style="text-align: center;">1.883</td>
+<td style="text-align: center;">16.92</td>
+<td style="text-align: center;">4.225</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ingenuo simple</td>
+<td style="text-align: center;">22.533</td>
+<td style="text-align: center;">4.215</td>
+<td style="text-align: center;">30.46</td>
+<td style="text-align: center;">9.458</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tabset-7-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-7-5-tab">
+
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-10-8" class="tab-pane" role="tabpanel" aria-labelledby="tabset-10-8-tab">
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-8-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-8-1" role="tab" aria-controls="tabset-8-1" aria-selected="true" href="">Descripción/Patrón</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-8-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-8-2" role="tab" aria-controls="tabset-8-2" aria-selected="false" href="">Partición y ajuste (con optimizar)</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-8-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-8-3" role="tab" aria-controls="tabset-8-3" aria-selected="false" href="">Medidas/Referente</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-8-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-8-4" role="tab" aria-controls="tabset-8-4" aria-selected="false" href="">Validación de errores</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-8-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-8-5" role="tab" aria-controls="tabset-8-5" aria-selected="false" href="">Conclusión/Recomendación</a></li></ul>
+<div class="tab-content">
+<div id="tabset-8-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-8-1-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-8-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-8-2-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">h</th>
+<th style="text-align: center;">fecha</th>
+<th style="text-align: center;">y_real</th>
+<th style="text-align: center;">y_pronosticado</th>
+<th style="text-align: center;">error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1990-07-01</td>
+<td style="text-align: center;">17106.9</td>
+<td style="text-align: center;">17147.39</td>
+<td style="text-align: center;">-40.49</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">1990-10-01</td>
+<td style="text-align: center;">17169.4</td>
+<td style="text-align: center;">17208.94</td>
+<td style="text-align: center;">-39.54</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">1991-01-01</td>
+<td style="text-align: center;">17239.4</td>
+<td style="text-align: center;">17270.49</td>
+<td style="text-align: center;">-31.09</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">1991-04-01</td>
+<td style="text-align: center;">17292.0</td>
+<td style="text-align: center;">17332.04</td>
+<td style="text-align: center;">-40.04</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">1991-07-01</td>
+<td style="text-align: center;">17354.2</td>
+<td style="text-align: center;">17393.59</td>
+<td style="text-align: center;">-39.39</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">1991-10-01</td>
+<td style="text-align: center;">17414.2</td>
+<td style="text-align: center;">17455.14</td>
+<td style="text-align: center;">-40.94</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">1992-01-01</td>
+<td style="text-align: center;">17447.3</td>
+<td style="text-align: center;">17516.69</td>
+<td style="text-align: center;">-69.39</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">1992-04-01</td>
+<td style="text-align: center;">17482.6</td>
+<td style="text-align: center;">17578.24</td>
+<td style="text-align: center;">-95.64</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">1992-07-01</td>
+<td style="text-align: center;">17526.0</td>
+<td style="text-align: center;">17639.79</td>
+<td style="text-align: center;">-113.79</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">1992-10-01</td>
+<td style="text-align: center;">17568.7</td>
+<td style="text-align: center;">17701.34</td>
+<td style="text-align: center;">-132.64</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">11</td>
+<td style="text-align: center;">1993-01-01</td>
+<td style="text-align: center;">17627.1</td>
+<td style="text-align: center;">17762.89</td>
+<td style="text-align: center;">-135.79</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">12</td>
+<td style="text-align: center;">1993-04-01</td>
+<td style="text-align: center;">17661.5</td>
+<td style="text-align: center;">17824.43</td>
+<td style="text-align: center;">-162.93</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">alpha</th>
+<th style="text-align: right;">beta</th>
+<th style="text-align: right;">MSE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.95</td>
+<td style="text-align: right;">0.8</td>
+<td style="text-align: right;">77.79622</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>alpha  beta 
+ TRUE FALSE </code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-8-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-8-3-tab">
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: center;">Método</th>
+<th style="text-align: center;">MSE</th>
+<th style="text-align: center;">MAD</th>
+<th style="text-align: center;">MAPE</th>
+<th style="text-align: center;">MASE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">Holt lineal</td>
+<td style="text-align: center;">8207.235</td>
+<td style="text-align: center;">78.472</td>
+<td style="text-align: center;">0.45</td>
+<td style="text-align: center;">1.484</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ingenuo simple</td>
+<td style="text-align: center;">133004.791</td>
+<td style="text-align: center;">322.042</td>
+<td style="text-align: center;">1.84</td>
+<td style="text-align: center;">6.091</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tabset-8-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-8-4-tab">
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="informe_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 11%">
+<col style="width: 3%">
+<col style="width: 17%">
+<col style="width: 7%">
+<col style="width: 45%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Prueba</th>
+<th style="text-align: center;">Estadístico</th>
+<th style="text-align: center;">gl</th>
+<th style="text-align: center;">Valor crítico (5%)</th>
+<th style="text-align: center;">Valor p</th>
+<th style="text-align: center;">Decisión</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">t (media cero)</td>
+<td style="text-align: center;">0.231</td>
+<td style="text-align: center;">74</td>
+<td style="text-align: center;">1.993</td>
+<td style="text-align: center;">0.818</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Ljung-Box</td>
+<td style="text-align: center;">73.681</td>
+<td style="text-align: center;">16</td>
+<td style="text-align: center;">26.296</td>
+<td style="text-align: center;">&lt; 0.001</td>
+<td style="text-align: center;">se rechaza</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">Jarque-Bera</td>
+<td style="text-align: center;">4.454</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">5.991</td>
+<td style="text-align: center;">0.108</td>
+<td style="text-align: center;">no se rechaza</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Durbin-Watson</td>
+<td style="text-align: center;">2.203</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">referencia visual (sin cotas dL/dU tabuladas aquí)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="tabset-8-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-8-5-tab">
+
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-10-9" class="tab-pane" role="tabpanel" aria-labelledby="tabset-10-9-tab">
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-9-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-9-1" role="tab" aria-controls="tabset-9-1" aria-selected="true" href="">Descripción y patrón (que contradice el método)</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-9-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-9-2" role="tab" aria-controls="tabset-9-2" aria-selected="false" href="">Ajuste</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-9-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-9-3" role="tab" aria-controls="tabset-9-3" aria-selected="false" href="">Medidas y referente</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-9-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-9-4" role="tab" aria-controls="tabset-9-4" aria-selected="false" href="">Validación de errores</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-9-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-9-5" role="tab" aria-controls="tabset-9-5" aria-selected="false" href="">Qué muestra el fallo</a></li></ul>
+<div class="tab-content">
+<div id="tabset-9-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-9-1-tab">
+
+</div>
+<div id="tabset-9-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-9-2-tab">
+
+</div>
+<div id="tabset-9-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-9-3-tab">
+
+</div>
+<div id="tabset-9-4" class="tab-pane" role="tabpanel" aria-labelledby="tabset-9-4-tab">
+
+</div>
+<div id="tabset-9-5" class="tab-pane" role="tabpanel" aria-labelledby="tabset-9-5-tab">
+
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

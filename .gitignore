@@ -1,0 +1,9 @@
+# Archivos de estado de R/RStudio que el enunciado prohíbe versionar
+.Rhistory
+.RData
+.Rproj.user/
+
+# Otros temporales comunes
+.Rproj.user
+*.Rproj.user
+.DS_Store

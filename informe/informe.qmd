@@ -1,0 +1,939 @@
+---
+title: "Tarea 1 - Caja de herramientas de pronostico"
+subtitle: "Series de Tiempo, codigo 3009297"
+author: "Sofía Cadavid Rueda"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: false
+    df-print: kable
+execute:
+  echo: true
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+```{r librerias}
+#Librerías`
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(tibble)
+library(ggplot2)
+library(patchwork)
+
+source("../R/00-lectura.R")
+source("../R/01-graficos.R")
+source("../R/02-metodos.R")
+source("../R/03-evaluacion.R")
+
+# Tema comun para todos los graficos del informe
+theme_set(theme_minimal(base_size = 11))
+
+# Formatea un numero con n decimales fijos
+fnum <- function(x, n = 3) formatC(x, format = "f", digits = n)
+
+# Formatea un valor p: si es muy chico, "< 0.001"; si no, con 3 decimales
+fp <- function(p) {
+  if (p < 0.001) "< 0.001" else fnum(p, 3)
+}
+
+tabla_bonita <- function(df, ...) {
+  knitr::kable(df, digits = 3, align = "c", ...)
+}
+
+reportar_prueba <- function(nombre, estadistico, valor_critico, valor_p, gl = NULL) {
+  decision <- if (valor_p < 0.05) "se **rechaza**" else "no se rechaza"
+  gl_txt <- if (!is.null(gl)) paste0(" ($gl=", gl, "$)") else ""
+  paste0(
+    nombre, ": estadístico observado = ", fnum(estadistico), gl_txt,
+    ", valor crítico (5%) = ", fnum(valor_critico), ", valor p = ", fp(valor_p),
+    ". ", decision, " $H_0$."
+  )
+}
+```
+
+# Análisis completo
+
+:::: {.panel-tabset}
+
+## Media simple
+
+::: {.panel-tabset}
+
+### Descripción/Patrón
+```{r}
+datos_ds <- leer_serie(discoveries, fuente = "discoveries, paquete datasets de R", unidad = "número de descubrimientos")
+graficar_serie(datos_ds, "Grandes descubrimientos científicos por año, 1860–1959")
+
+res_ds <- correlograma(datos_ds)
+res_ds$grafico
+
+Tn_ds     <- nrow(datos_ds)
+mitad1_ds <- mean(datos_ds$y[1:(Tn_ds %/% 2)])
+mitad2_ds <- mean(datos_ds$y[(Tn_ds %/% 2 + 1):Tn_ds])
+
+
+lb_serie_ds <- ljung_box(res_ds$r_h, T = res_ds$n, m = res_ds$m, p = 0)
+
+
+fuera_banda_ds <- which(abs(res_ds$r_h) > res_ds$banda)
+```
+Se utilizó la serie `discoveries`, que registra el número de grandes
+descubrimientos científicos por año entre 1860 y 1959, con frecuencia
+anual (`r Tn_ds` observaciones). En el gráfico se observa que el nivel de
+la serie oscila alrededor de un valor aproximadamente constante, sin
+tendencia sostenida a lo largo de los años. Sin embargo, en el tramo
+cercano a 1885 se presenta una elevación anómala comparada con el resto
+del período. Esto se confirma al comparar la media de la primera mitad de
+la muestra (`r fnum(mitad1_ds, 2)`) con la de la segunda mitad
+(`r fnum(mitad2_ds, 2)`): la diferencia es moderada y no refleja un
+desplazamiento sostenido del nivel, sino que está influida por ese tramo
+puntual.
+
+Para leer el correlograma de forma individual, el rezago $r_1\approx
+`r fnum(res_ds$r_h[1], 2)`$ decae rápidamente, y `r if (length(fuera_banda_ds) == 0) "ningún rezago" else paste("solo el/los rezago(s)", paste(fuera_banda_ds, collapse = ", "))`
+cruza la banda de ruido blanco de $\pm `r fnum(res_ds$banda, 3)`$
+($\pm1{,}96/\sqrt{`r res_ds$n`}$), sin ningún patrón sistemático de
+decaimiento lento ni picos periódicos.
+
+Esa lectura se confirma con una prueba conjunta. $H_0:
+\rho_1=\dots=\rho_{`r res_ds$m`}=0$ (la serie no tiene autocorrelación
+conjunta hasta el rezago `r res_ds$m`) contra $H_1$: al menos un
+$\rho_h\neq0$. El estadístico es $Q_m=T(T+2)\sum_{h=1}^{m}
+r_h^2/(T-h)\sim\chi^2_m$ bajo $H_0$ (aquí $p=0$ porque la prueba se aplica
+a la serie, antes de ajustar cualquier método). `r reportar_prueba("Ljung-Box sobre la serie", lb_serie_ds$estadistico, lb_serie_ds$valor_critico, lb_serie_ds$valor_p, lb_serie_ds$gl)`
+En términos de la serie, esto indica que, tomada en conjunto, no hay
+evidencia de dependencia lineal más allá de lo esperado por azar. En
+conjunto, la evidencia visual y la prueba formal confirman que la serie
+es estacionaria en media.
+
+Esta serie es adecuada para el método de media simple, ya que este método
+utiliza toda la historia disponible hasta el momento, asignando un mismo
+peso a cada dato: el pronóstico en $t+1$ es el promedio acumulado de todo
+lo observado hasta $t$. Como `discoveries` no presenta tendencia ni
+estacionalidad, y su nivel es aproximadamente constante, el supuesto
+detrás de la media simple ($Y_t = \beta_0 + \varepsilon_t$) es razonable
+para esta serie.
+
+### Partición/Ajuste
+```{r}
+# h = min{12, floor(0.2*T)}, segun la regla del protocolo (Seccion 4a)
+n_valid <- min(12, floor(0.2 * Tn_ds))
+n_estim <- Tn_ds - n_valid
+
+y_estim_ds <- datos_ds$y[1:n_estim]
+y_valid_ds <- datos_ds$y[(n_estim + 1):Tn_ds]
+
+fecha_corte <- datos_ds$fecha[n_estim]
+
+ajuste_media_ds  <- ajustar_media(y_estim_ds)
+pron_media_ds    <- ajuste_media_ds$pronosticar(n_valid)
+e_valid_media_ds <- y_valid_ds - pron_media_ds
+
+n_neg_ds     <- sum(e_valid_media_ds < 0)
+anios_pos_ds <- format(datos_ds$fecha[(n_estim + 1):Tn_ds][e_valid_media_ds > 0], "%Y")
+
+tabla_valid_media_ds <- tibble::tibble(
+  h              = 1:n_valid,
+  fecha          = datos_ds$fecha[(n_estim + 1):Tn_ds],
+  y_real         = y_valid_ds,
+  y_pronosticado = round(pron_media_ds, 2),
+  error          = round(e_valid_media_ds, 2)
+)
+tabla_bonita(tabla_valid_media_ds)
+```
+
+Con $T=`r Tn_ds`$, la regla $h=\min\{12,\lfloor0{,}2\,T\rfloor\}$ da
+$h=`r n_valid`$. La fecha de corte fue `r format(fecha_corte, "%Y")`,
+dejando `r n_estim` años para el tramo de estimación
+(`r format(datos_ds$fecha[1], "%Y")`-`r format(fecha_corte, "%Y")`) y
+`r n_valid` años para el tramo de validación
+(`r format(datos_ds$fecha[n_estim + 1], "%Y")`-`r format(datos_ds$fecha[Tn_ds], "%Y")`).
+Como se observa en la tabla, `y_pronosticado` es el mismo valor en los
+`r n_valid` años del horizonte. Esto es natural en este método, ya que el
+pronóstico de la media simple es $\hat{Y}_{T+h}=\bar{Y}$ para todo
+horizonte $h$: no depende de cuántos años adelante se pronostique,
+siempre es la misma media calculada sobre el tramo de estimación. Además,
+en la columna de error se observa que `r n_neg_ds` de los `r n_valid`
+años tienen error negativo, es decir, el valor real quedó por debajo de
+lo que predijo el promedio histórico; esto sugiere que el nivel del tramo
+de validación fue más bajo que el nivel promedio del tramo de estimación.
+`r if (length(anios_pos_ds) == 0) "Ningún año del tramo de validación tuvo error positivo." else paste0("El o los único(s) año(s) con error positivo fue(ron): ", paste(anios_pos_ds, collapse = ", "), ".")`
+
+### Medidas/Referente 
+
+```{r}
+med_media_ds <- medidas(
+  e = e_valid_media_ds,
+  y = y_valid_ds,
+  y_entrenamiento = y_estim_ds,
+  s = 1
+)
+
+pron_ingenuo_ds    <- rep(y_estim_ds[n_estim], n_valid)
+e_valid_ingenuo_ds <- y_valid_ds - pron_ingenuo_ds
+
+med_ingenuo_ds <- medidas(
+  e = e_valid_ingenuo_ds,
+  y = y_valid_ds,
+  y_entrenamiento = y_estim_ds,
+  s = 1
+)
+
+hay_ceros_ds <- any(y_valid_ds == 0)
+
+tabla_comparacion_ds <- tibble::tibble(
+  Método = c("Media simple", "Ingenuo simple"),
+  MSE    = round(c(med_media_ds$MSE,  med_ingenuo_ds$MSE), 3),
+  MAD    = round(c(med_media_ds$MAD,  med_ingenuo_ds$MAD), 3),
+  MAPE   = round(c(med_media_ds$MAPE, med_ingenuo_ds$MAPE), 2),
+  MASE   = round(c(med_media_ds$MASE, med_ingenuo_ds$MASE), 3)
+)
+tabla_bonita(tabla_comparacion_ds)
+```
+
+Dados los resultados de la tabla, en las métricas comparables (MSE, MAD y
+MASE) `r if (med_media_ds$MASE > med_ingenuo_ds$MASE) "el ingenuo simple obtiene un error menor que la media simple" else "la media simple obtiene un error menor que el ingenuo simple"`.
+En particular, el MASE de la media simple es `r fnum(med_media_ds$MASE)`
+y el del ingenuo es `r fnum(med_ingenuo_ds$MASE)`: según la regla de la
+Clase 3, un MASE mayor a 1 significa que el método produjo un error peor
+que el del referente más simple posible. Esto conecta con el análisis
+anterior, donde `r n_neg_ds` de los `r n_valid` errores de validación
+fueron negativos: a pesar de usar `r n_estim` años de historia, la media
+simple `r if (med_media_ds$MASE > 1) "no logró adaptarse" else "logró adaptarse"`
+a la caída de nivel del tramo final. `r if (hay_ceros_ds) "El MAPE no se pudo comparar porque el tramo de validación contiene ceros, donde la medida queda indefinida." else paste0("El MAPE fue de ", fnum(med_media_ds$MAPE, 2), "% para la media simple y ", fnum(med_ingenuo_ds$MAPE, 2), "% para el ingenuo.")`
+
+### Validación de errores
+```{r}
+e_estim_media_ds <- (y_estim_ds - ajuste_media_ds$yhat)[-1]
+val_media_ds <- validar_errores(e_estim_media_ds, p = 1)
+
+val_media_ds$grafico_tiempo | val_media_ds$correlograma$grafico
+
+t_test <- val_media_ds$prueba_t_media_cero
+lb     <- val_media_ds$ljung_box
+jb     <- val_media_ds$jarque_bera
+dw     <- val_media_ds$durbin_watson
+
+tabla_pruebas_media_ds <- tibble::tibble(
+  Prueba        = c("t (media cero)", "Ljung-Box", "Jarque-Bera", "Durbin-Watson"),
+  Estadistico   = c(fnum(t_test$statistic), fnum(lb$estadistico), fnum(jb$estadistico), fnum(dw$estadistico)),
+  gl            = c(as.character(t_test$parameter), lb$gl, jb$gl, "—"),
+  Valor_critico = c(fnum(qt(0.975, t_test$parameter)), fnum(lb$valor_critico), fnum(jb$valor_critico), "—"),
+  Valor_p       = c(fp(t_test$p.value), fp(lb$valor_p), fp(jb$valor_p), "—"),
+  Decision      = c(
+    if (t_test$p.value < 0.05) "se rechaza" else "no se rechaza",
+    if (lb$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    if (jb$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    "referencia visual (sin cotas dL/dU tabuladas aquí)"
+  )
+)
+
+tabla_bonita(tabla_pruebas_media_ds,
+             col.names = c("Prueba", "Estadístico", "gl", "Valor crítico (5%)", "Valor p", "Decisión"))
+```
+Sobre los residuos de estimación de la media simple se contrastan tres
+supuestos, cada uno con sus seis elementos.
+
+Media cero: $H_0:E(e_t)=0$ vs. $H_1:E(e_t)\neq0$.
+`r reportar_prueba("Prueba t", t_test$statistic, qt(0.975, t_test$parameter), t_test$p.value, t_test$parameter)`
+En términos del método, esto dice que los pronósticos de la media simple
+no están sesgados de forma sistemática en el tramo de estimación.
+
+Ausencia de autocorrelación: $H_0:\rho_1=\dots=\rho_{`r lb$gl + 1`}=0$ vs.
+$H_1$: alguno distinto de cero, con $gl=m-p=`r lb$gl`$ porque la media
+simple estima $p=1$ parámetro ($\beta_0$).
+`r reportar_prueba("Ljung-Box sobre los residuos", lb$estadistico, lb$valor_critico, lb$valor_p, lb$gl)`
+Esto es coherente con el correlograma de errores: ningún rezago cruza
+claramente la banda de significancia, es decir, el método no dejó
+estructura lineal explotable en los residuos de estimación.
+
+Normalidad: $H_0$: los residuos provienen de una distribución normal
+(asimetría 0, curtosis 3) vs. $H_1$: no.
+`r reportar_prueba("Jarque-Bera", jb$estadistico, jb$valor_critico, jb$valor_p, jb$gl)`
+con asimetría `r fnum(jb$asimetria, 2)` y curtosis `r fnum(jb$curtosis, 2)`
+sobre `r jb$N` errores`r if (jb$advertencia_muestra_pequena) " (advertencia: la prueba es asintótica y aquí hay menos de 20 errores, por lo que su decisión se reporta con cautela)" else ""`.
+El gráfico de errores en el tiempo muestra la causa más probable: un
+valor atípico grande cerca del tramo elevado de mediados de 1880
+identificado desde la descripción de la serie, que por sí solo puede
+romper el supuesto de normalidad sin generar autocorrelación ni sesgo
+sistemático en el resto de la muestra ($d=`r fnum(dw$estadistico, 2)`$,
+próximo a 2).
+
+### Conclusión/Recomendación
+
+
+
+:::
+
+## Media movil
+
+::: {.panel-tabset}
+
+### Descripción/Patrón
+
+```{r}
+
+datos_mm <- leer_serie(discoveries, fuente = "discoveries, paquete datasets de R", unidad = "número de descubrimientos")
+g_mm <- graficar_serie(datos_mm, "Grandes descubrimientos científicos por año, 1860–1959")
+
+res_mm <- correlograma(datos_mm)
+g_mm | res_mm$grafico
+
+Tn_mm     <- nrow(datos_mm)
+mitad1_mm <- mean(datos_mm$y[1:(Tn_mm %/% 2)])
+mitad2_mm <- mean(datos_mm$y[(Tn_mm %/% 2 + 1):Tn_mm])
+
+lb_serie_mm    <- ljung_box(res_mm$r_h, T = res_mm$n, m = res_mm$m, p = 0)
+fuera_banda_mm <- which(abs(res_mm$r_h) > res_mm$banda)
+```
+Se reutilizó la serie `discoveries`. Como se observa en el correlograma,
+no hay un patrón de tendencia, sino un decaimiento rápido que tarda unos
+pocos rezagos más en apagarse que en el ejemplo anterior: $r_1=`r fnum(res_mm$r_h[1], 3)`$,
+$r_2=`r fnum(res_mm$r_h[2], 3)`$ y $r_3=`r fnum(res_mm$r_h[3], 3)`$ salen de
+la banda de $\pm`r fnum(res_mm$banda, 3)`$, y solo desde $r_4=`r fnum(res_mm$r_h[4], 3)`$
+la serie entra en la banda. La prueba de Ljung-Box confirma que esa
+estructura es débil: $Q_{`r lb_serie_mm$gl`}=`r fnum(lb_serie_mm$estadistico, 2)`$
+frente a un crítico de `r fnum(lb_serie_mm$valor_critico, 2)` ($p=`r fnum(lb_serie_mm$valor_p, 3)`$),
+por lo que no se rechaza $H_0$, pero por un margen muy estrecho. Esto
+sirve también para la media móvil: la media simple pondera por igual
+toda la historia y no aprovecha la dependencia de corto plazo que
+muestran $r_1$ a $r_3$; la media móvil, al construirse solo con las
+últimas $k$ observaciones, sí puede seguir esa dependencia reciente,
+aunque a costa de perder la eficiencia de usar toda la muestra.
+
+### Partición/Ajuste
+```{r}
+n_valid_mm <- min(12, floor(0.2 * Tn_mm))
+n_estim_mm <- Tn_mm - n_valid_mm
+
+y_estim_mm <- datos_mm$y[1:n_estim_mm]
+y_valid_mm <- datos_mm$y[(n_estim_mm + 1):Tn_mm]
+
+opt_mm <- optimizar(y_estim_mm, metodo = "mm", rejilla = 2:12)
+
+ajuste_mm  <- ajustar_mm(y_estim_mm, k = opt_mm$optimo$k)
+pron_mm    <- ajuste_mm$pronosticar(n_valid_mm)
+e_valid_mm <- y_valid_mm - pron_mm
+
+tabla_valid_mm <- tibble::tibble(
+  h              = 1:n_valid_mm,
+  fecha          = datos_mm$fecha[(n_estim_mm + 1):Tn_mm],
+  y_real         = y_valid_mm,
+  y_pronosticado = round(pron_mm, 2),
+  error          = round(e_valid_mm, 2)
+)
+tabla_bonita(tabla_valid_mm)
+tabla_bonita(opt_mm$tabla)
+opt_mm$optimo
+opt_mm$en_borde
+```
+
+### Medida/Referente
+
+```{r}
+med_mm <- medidas(e = e_valid_mm, y = y_valid_mm, y_entrenamiento = y_estim_mm, s = 1)
+
+pron_ingenuo_mm    <- rep(y_estim_mm[n_estim_mm], n_valid_mm)
+e_valid_ingenuo_mm <- y_valid_mm - pron_ingenuo_mm
+med_ingenuo_mm <- medidas(e = e_valid_ingenuo_mm, y = y_valid_mm, y_entrenamiento = y_estim_mm, s = 1)
+
+tabla_comparacion_mm <- tibble::tibble(
+  Método = c("Media movil", "Ingenuo simple"),
+  MSE    = round(c(med_mm$MSE,  med_ingenuo_mm$MSE), 3),
+  MAD    = round(c(med_mm$MAD,  med_ingenuo_mm$MAD), 3),
+  MAPE   = round(c(med_mm$MAPE, med_ingenuo_mm$MAPE), 2),
+  MASE   = round(c(med_mm$MASE, med_ingenuo_mm$MASE), 3)
+)
+tabla_bonita(tabla_comparacion_mm)
+```
+
+### Validación de errores
+
+```{r}
+e_estim_mm <- na.omit(y_estim_mm - ajuste_mm$yhat)
+val_mm <- validar_errores(e_estim_mm, p = 1)
+val_mm$grafico_tiempo | val_mm$correlograma$grafico
+
+t_test_mm <- val_mm$prueba_t_media_cero
+lb_mm     <- val_mm$ljung_box
+jb_mm     <- val_mm$jarque_bera
+dw_mm     <- val_mm$durbin_watson
+
+tabla_pruebas_mm <- tibble::tibble(
+  Prueba        = c("t (media cero)", "Ljung-Box", "Jarque-Bera", "Durbin-Watson"),
+  Estadistico   = c(fnum(t_test_mm$statistic), fnum(lb_mm$estadistico), fnum(jb_mm$estadistico), fnum(dw_mm$estadistico)),
+  gl            = c(as.character(t_test_mm$parameter), lb_mm$gl, jb_mm$gl, "—"),
+  Valor_critico = c(fnum(qt(0.975, t_test_mm$parameter)), fnum(lb_mm$valor_critico), fnum(jb_mm$valor_critico), "—"),
+  Valor_p       = c(fp(t_test_mm$p.value), fp(lb_mm$valor_p), fp(jb_mm$valor_p), "—"),
+  Decision      = c(
+    if (t_test_mm$p.value < 0.05) "se rechaza" else "no se rechaza",
+    if (lb_mm$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    if (jb_mm$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    "referencia visual (sin cotas dL/dU tabuladas aquí)"
+  )
+)
+tabla_bonita(tabla_pruebas_mm,
+             col.names = c("Prueba", "Estadístico", "gl", "Valor crítico (5%)", "Valor p", "Decisión"))
+```
+
+### Conclusión/Recomendación
+
+:::
+
+## Suavizamiento exponencial simple
+
+::: {.panel-tabset}
+### Descripción/Patrón
+
+```{r}
+datos_ses <- leer_serie(LakeHuron, fuente = "LakeHuron, paquete datasets de R", unidad = "pies sobre el datum internacional de Grandes Lagos")
+g_ses <- graficar_serie(datos_ses, "Nivel del lago Huron, 1875-1972")
+res_ses <- correlograma(datos_ses)
+g_ses | res_ses$grafico
+
+Tn_ses     <- nrow(datos_ses)
+mitad1_ses <- mean(datos_ses$y[1:(Tn_ses %/% 2)])
+mitad2_ses <- mean(datos_ses$y[(Tn_ses %/% 2 + 1):Tn_ses])
+
+lb_serie_ses    <- ljung_box(res_ses$r_h, T = res_ses$n, m = res_ses$m, p = 0)
+fuera_banda_ses <- which(abs(res_ses$r_h) > res_ses$banda)
+```
+
+### Partición/Ajuste
+
+```{r}
+n_valid_ses <- min(12, floor(0.2 * Tn_ses))
+n_estim_ses <- Tn_ses - n_valid_ses
+
+y_estim_ses <- datos_ses$y[1:n_estim_ses]
+y_valid_ses <- datos_ses$y[(n_estim_ses + 1):Tn_ses]
+
+opt_ses <- optimizar(y_estim_ses, metodo = "ses", rejilla = seq(0.02, 0.98, by = 0.02))
+
+ajuste_ses  <- ajustar_ses(y_estim_ses, alpha = opt_ses$optimo$alpha)
+pron_ses    <- ajuste_ses$pronosticar(n_valid_ses)
+e_valid_ses <- y_valid_ses - pron_ses
+
+tabla_valid_ses <- tibble::tibble(
+  h              = 1:n_valid_ses,
+  fecha          = datos_ses$fecha[(n_estim_ses + 1):Tn_ses],
+  y_real         = y_valid_ses,
+  y_pronosticado = round(pron_ses, 2),
+  error          = round(e_valid_ses, 2)
+)
+tabla_bonita(tabla_valid_ses)
+opt_ses$optimo
+opt_ses$en_borde
+```
+
+### Medidas/Referente
+
+```{r}
+med_ses <- medidas(e = e_valid_ses, y = y_valid_ses, y_entrenamiento = y_estim_ses, s = 1)
+
+pron_ingenuo_ses    <- rep(y_estim_ses[n_estim_ses], n_valid_ses)
+e_valid_ingenuo_ses <- y_valid_ses - pron_ingenuo_ses
+med_ingenuo_ses <- medidas(e = e_valid_ingenuo_ses, y = y_valid_ses, y_entrenamiento = y_estim_ses, s = 1)
+
+tabla_comparacion_ses <- tibble::tibble(
+  Método = c("SES", "Ingenuo simple"),
+  MSE    = round(c(med_ses$MSE,  med_ingenuo_ses$MSE), 3),
+  MAD    = round(c(med_ses$MAD,  med_ingenuo_ses$MAD), 3),
+  MAPE   = round(c(med_ses$MAPE, med_ingenuo_ses$MAPE), 2),
+  MASE   = round(c(med_ses$MASE, med_ingenuo_ses$MASE), 3)
+)
+tabla_bonita(tabla_comparacion_ses)
+```
+
+### Validación de errores
+
+```{r}
+e_estim_ses <- na.omit(y_estim_ses - ajuste_ses$yhat)
+val_ses <- validar_errores(e_estim_ses, p = 1)
+val_ses$grafico_tiempo | val_ses$correlograma$grafico
+
+t_test_ses <- val_ses$prueba_t_media_cero
+lb_ses     <- val_ses$ljung_box
+jb_ses     <- val_ses$jarque_bera
+dw_ses     <- val_ses$durbin_watson
+
+tabla_pruebas_ses <- tibble::tibble(
+  Prueba        = c("t (media cero)", "Ljung-Box", "Jarque-Bera", "Durbin-Watson"),
+  Estadistico   = c(fnum(t_test_ses$statistic), fnum(lb_ses$estadistico), fnum(jb_ses$estadistico), fnum(dw_ses$estadistico)),
+  gl            = c(as.character(t_test_ses$parameter), lb_ses$gl, jb_ses$gl, "—"),
+  Valor_critico = c(fnum(qt(0.975, t_test_ses$parameter)), fnum(lb_ses$valor_critico), fnum(jb_ses$valor_critico), "—"),
+  Valor_p       = c(fp(t_test_ses$p.value), fp(lb_ses$valor_p), fp(jb_ses$valor_p), "—"),
+  Decision      = c(
+    if (t_test_ses$p.value < 0.05) "se rechaza" else "no se rechaza",
+    if (lb_ses$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    if (jb_ses$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    "referencia visual (sin cotas dL/dU tabuladas aquí)"
+  )
+)
+tabla_bonita(tabla_pruebas_ses,
+             col.names = c("Prueba", "Estadístico", "gl", "Valor crítico (5%)", "Valor p", "Decisión"))
+```
+
+### Conclusión/Recomendación
+:::
+
+## Doble media movil
+
+::: {.panel-tabset}
+### Descripción/Patrón
+
+```{r}
+datos_dmm <- leer_serie(Nile, fuente = "Nile, paquete datasets de R", unidad = "caudal anual del río Nilo")
+g_dmm <- graficar_serie(datos_dmm, "Caudal anual del río Nilo en Asuán, 1871-1970")
+res_dmm <- correlograma(datos_dmm)
+g_dmm | res_dmm$grafico
+lb_serie_dmm <- ljung_box(res_dmm$r_h, T = res_dmm$n, m = res_dmm$m, p = 0)
+```
+
+### Partición/Ajuste
+
+```{r}
+Tn_dmm <- nrow(datos_dmm)
+```
+
+
+```{r}
+n_valid_dmm <- min(12, floor(0.2 * Tn_dmm))
+n_estim_dmm <- Tn_dmm - n_valid_dmm
+
+y_estim_dmm <- datos_dmm$y[1:n_estim_dmm]
+y_valid_dmm <- datos_dmm$y[(n_estim_dmm + 1):Tn_dmm]
+
+opt_dmm <- optimizar(y_estim_dmm, metodo = "dmm", rejilla = 2:12)
+
+ajuste_dmm  <- ajustar_dmm(y_estim_dmm, k = opt_dmm$optimo$k)
+pron_dmm    <- ajuste_dmm$pronosticar(n_valid_dmm)
+e_valid_dmm <- y_valid_dmm - pron_dmm
+
+tabla_valid_dmm <- tibble::tibble(
+  h              = 1:n_valid_dmm,
+  fecha          = datos_dmm$fecha[(n_estim_dmm + 1):Tn_dmm],
+  y_real         = y_valid_dmm,
+  y_pronosticado = round(pron_dmm, 2),
+  error          = round(e_valid_dmm, 2)
+)
+tabla_bonita(tabla_valid_dmm)
+opt_dmm$optimo
+opt_dmm$en_borde
+```
+
+### Medidas/Referente
+
+```{r}
+med_dmm <- medidas(e = e_valid_dmm, y = y_valid_dmm, y_entrenamiento = y_estim_dmm, s = 1)
+
+pron_ingenuo_dmm    <- rep(y_estim_dmm[n_estim_dmm], n_valid_dmm)
+e_valid_ingenuo_dmm <- y_valid_dmm - pron_ingenuo_dmm
+med_ingenuo_dmm <- medidas(e = e_valid_ingenuo_dmm, y = y_valid_dmm, y_entrenamiento = y_estim_dmm, s = 1)
+
+tabla_comparacion_dmm <- tibble::tibble(
+  Método = c("Doble media movil", "Ingenuo simple"),
+  MSE    = round(c(med_dmm$MSE,  med_ingenuo_dmm$MSE), 3),
+  MAD    = round(c(med_dmm$MAD,  med_ingenuo_dmm$MAD), 3),
+  MAPE   = round(c(med_dmm$MAPE, med_ingenuo_dmm$MAPE), 2),
+  MASE   = round(c(med_dmm$MASE, med_ingenuo_dmm$MASE), 3)
+)
+tabla_bonita(tabla_comparacion_dmm)
+```
+
+### Validación de errores
+
+```{r}
+e_estim_dmm <- na.omit(y_estim_dmm - ajuste_dmm$yhat)
+val_dmm <- validar_errores(e_estim_dmm, p = 2)
+val_dmm$grafico_tiempo | val_dmm$correlograma$grafico
+
+t_test_dmm <- val_dmm$prueba_t_media_cero
+lb_dmm     <- val_dmm$ljung_box
+jb_dmm     <- val_dmm$jarque_bera
+dw_dmm     <- val_dmm$durbin_watson
+
+tabla_pruebas_dmm <- tibble::tibble(
+  Prueba        = c("t (media cero)", "Ljung-Box", "Jarque-Bera", "Durbin-Watson"),
+  Estadistico   = c(fnum(t_test_dmm$statistic), fnum(lb_dmm$estadistico), fnum(jb_dmm$estadistico), fnum(dw_dmm$estadistico)),
+  gl            = c(as.character(t_test_dmm$parameter), lb_dmm$gl, jb_dmm$gl, "—"),
+  Valor_critico = c(fnum(qt(0.975, t_test_dmm$parameter)), fnum(lb_dmm$valor_critico), fnum(jb_dmm$valor_critico), "—"),
+  Valor_p       = c(fp(t_test_dmm$p.value), fp(lb_dmm$valor_p), fp(jb_dmm$valor_p), "—"),
+  Decision      = c(
+    if (t_test_dmm$p.value < 0.05) "se rechaza" else "no se rechaza",
+    if (lb_dmm$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    if (jb_dmm$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    "referencia visual (sin cotas dL/dU tabuladas aquí)"
+  )
+)
+tabla_bonita(tabla_pruebas_dmm,
+             col.names = c("Prueba", "Estadístico", "gl", "Valor crítico (5%)", "Valor p", "Decisión"))
+```
+
+### Conclusión/Recomendación
+:::
+
+## Tendencia lineal
+
+::: {.panel-tabset}
+### Descripción/Patrón
+
+```{r}
+datos_tl <- leer_serie(austres, fuente = "austres, paquete datasets de R", unidad = "miles de residentes en Australia")
+g_tl <- graficar_serie(datos_tl, "Poblacion residente en Australia, 1971-1993")
+res_tl <- correlograma(datos_tl)
+g_tl | res_tl$grafico
+
+Tn_tl <- nrow(datos_tl)
+lb_serie_tl <- ljung_box(res_tl$r_h, T = res_tl$n, m = res_tl$m, p = 0)
+```
+
+### Ajuste/Tabla de coeficientes
+
+```{r}
+n_valid_tl <- min(12, floor(0.2 * Tn_tl))
+n_estim_tl <- Tn_tl - n_valid_tl
+
+y_estim_tl <- datos_tl$y[1:n_estim_tl]
+y_valid_tl <- datos_tl$y[(n_estim_tl + 1):Tn_tl]
+
+m_tl        <- ajustar_tendencia(y_estim_tl, tipo = "lineal")
+pron_tl     <- m_tl$pronosticar(n_valid_tl)
+e_valid_tl  <- y_valid_tl - pron_tl
+
+tabla_bonita(m_tl$parametros$tabla,
+             col.names = c("Término", "Estimación", "EE ordinario", "EE robusto (HAC)", "t (HAC)", "Valor p (HAC)"))
+m_tl$parametros$R2
+```
+
+### Revisión de supuestos
+
+```{r}
+e_estim_tl <- y_estim_tl - m_tl$yhat
+val_tl <- validar_errores(e_estim_tl, p = 2)
+val_tl$grafico_tiempo | val_tl$correlograma$grafico
+
+t_test_tl <- val_tl$prueba_t_media_cero
+lb_tl     <- val_tl$ljung_box
+jb_tl     <- val_tl$jarque_bera
+
+tabla_pruebas_tl <- tibble::tibble(
+  Prueba        = c("t (media cero)", "Ljung-Box", "Jarque-Bera"),
+  Estadistico   = c(fnum(t_test_tl$statistic), fnum(lb_tl$estadistico), fnum(jb_tl$estadistico)),
+  gl            = c(as.character(t_test_tl$parameter), lb_tl$gl, jb_tl$gl),
+  Valor_critico = c(fnum(qt(0.975, t_test_tl$parameter)), fnum(lb_tl$valor_critico), fnum(jb_tl$valor_critico)),
+  Valor_p       = c(fp(t_test_tl$p.value), fp(lb_tl$valor_p), fp(jb_tl$valor_p)),
+  Decision      = c(
+    if (t_test_tl$p.value < 0.05) "se rechaza" else "no se rechaza",
+    if (lb_tl$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    if (jb_tl$valor_p < 0.05) "se rechaza" else "no se rechaza"
+  )
+)
+tabla_bonita(tabla_pruebas_tl,
+             col.names = c("Prueba", "Estadístico", "gl", "Valor crítico (5%)", "Valor p", "Decisión"))
+m_tl$parametros$dw
+```
+
+### Medidas/Referente
+
+```{r}
+med_tl <- medidas(e = e_valid_tl, y = y_valid_tl, y_entrenamiento = y_estim_tl, s = 1)
+
+pron_ingenuo_tl    <- rep(y_estim_tl[n_estim_tl], n_valid_tl)
+e_valid_ingenuo_tl <- y_valid_tl - pron_ingenuo_tl
+med_ingenuo_tl <- medidas(e = e_valid_ingenuo_tl, y = y_valid_tl, y_entrenamiento = y_estim_tl, s = 1)
+
+tabla_comparacion_tl <- tibble::tibble(
+  Método = c("Tendencia lineal", "Ingenuo simple"),
+  MSE    = round(c(med_tl$MSE,  med_ingenuo_tl$MSE), 3),
+  MAD    = round(c(med_tl$MAD,  med_ingenuo_tl$MAD), 3),
+  MAPE   = round(c(med_tl$MAPE, med_ingenuo_tl$MAPE), 2),
+  MASE   = round(c(med_tl$MASE, med_ingenuo_tl$MASE), 3)
+)
+tabla_bonita(tabla_comparacion_tl)
+```
+
+### Conclusión/Recomendación
+:::
+
+## Tendencia cuadratica
+
+::: {.panel-tabset}
+### Descripción/Patrón
+
+```{r}
+datos_tc <- leer_serie(co2, fuente = "co2, paquete datasets de R (Observatorio Mauna Loa)", unidad = "ppm de CO2 atmosferico")
+g_tc <- graficar_serie(datos_tc, "Concentracion atmosferica de CO2, Mauna Loa 1959-1997")
+res_tc <- correlograma(datos_tc)
+g_tc | res_tc$grafico
+
+Tn_tc <- nrow(datos_tc)
+lb_serie_tc <- ljung_box(res_tc$r_h, T = res_tc$n, m = res_tc$m, p = 0)
+```
+
+### Ajuste y tabla de coeficientes
+
+```{r}
+n_valid_tc <- min(12, floor(0.2 * Tn_tc))
+n_estim_tc <- Tn_tc - n_valid_tc
+
+y_estim_tc <- datos_tc$y[1:n_estim_tc]
+y_valid_tc <- datos_tc$y[(n_estim_tc + 1):Tn_tc]
+
+m_tc        <- ajustar_tendencia(y_estim_tc, tipo = "cuadratica")
+pron_tc     <- m_tc$pronosticar(n_valid_tc)
+e_valid_tc  <- y_valid_tc - pron_tc
+
+tabla_bonita(m_tc$parametros$tabla,
+             col.names = c("Término", "Estimación", "EE ordinario", "EE robusto (HAC)", "t (HAC)", "Valor p (HAC)"))
+m_tc$parametros$R2
+```
+
+### Revisión de supuestos
+
+```{r}
+e_estim_tc <- y_estim_tc - m_tc$yhat
+val_tc <- validar_errores(e_estim_tc, p = 3)
+val_tc$grafico_tiempo | val_tc$correlograma$grafico
+
+t_test_tc <- val_tc$prueba_t_media_cero
+lb_tc     <- val_tc$ljung_box
+jb_tc     <- val_tc$jarque_bera
+
+tabla_pruebas_tc <- tibble::tibble(
+  Prueba        = c("t (media cero)", "Ljung-Box", "Jarque-Bera"),
+  Estadistico   = c(fnum(t_test_tc$statistic), fnum(lb_tc$estadistico), fnum(jb_tc$estadistico)),
+  gl            = c(as.character(t_test_tc$parameter), lb_tc$gl, jb_tc$gl),
+  Valor_critico = c(fnum(qt(0.975, t_test_tc$parameter)), fnum(lb_tc$valor_critico), fnum(jb_tc$valor_critico)),
+  Valor_p       = c(fp(t_test_tc$p.value), fp(lb_tc$valor_p), fp(jb_tc$valor_p)),
+  Decision      = c(
+    if (t_test_tc$p.value < 0.05) "se rechaza" else "no se rechaza",
+    if (lb_tc$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    if (jb_tc$valor_p < 0.05) "se rechaza" else "no se rechaza"
+  )
+)
+tabla_bonita(tabla_pruebas_tc,
+             col.names = c("Prueba", "Estadístico", "gl", "Valor crítico (5%)", "Valor p", "Decisión"))
+m_tc$parametros$dw
+```
+
+### Medidas/Referente
+
+```{r}
+med_tc <- medidas(e = e_valid_tc, y = y_valid_tc, y_entrenamiento = y_estim_tc, s = 1)
+
+pron_ingenuo_tc    <- rep(y_estim_tc[n_estim_tc], n_valid_tc)
+e_valid_ingenuo_tc <- y_valid_tc - pron_ingenuo_tc
+med_ingenuo_tc <- medidas(e = e_valid_ingenuo_tc, y = y_valid_tc, y_entrenamiento = y_estim_tc, s = 1)
+
+tabla_comparacion_tc <- tibble::tibble(
+  Método = c("Tendencia cuadratica", "Ingenuo simple"),
+  MSE    = round(c(med_tc$MSE,  med_ingenuo_tc$MSE), 3),
+  MAD    = round(c(med_tc$MAD,  med_ingenuo_tc$MAD), 3),
+  MAPE   = round(c(med_tc$MAPE, med_ingenuo_tc$MAPE), 2),
+  MASE   = round(c(med_tc$MASE, med_ingenuo_tc$MASE), 3)
+)
+tabla_bonita(tabla_comparacion_tc)
+```
+
+### Conclusión/Recomendación
+:::
+
+## Tendencia exponencial
+
+::: {.panel-tabset}
+### Descripción/Patrón
+
+```{r}
+datos_te <- leer_serie(JohnsonJohnson, fuente = "JohnsonJohnson, paquete datasets de R", unidad = "dolares por accion")
+g_te <- graficar_serie(datos_te, "Ganancias trimestrales por accion, Johnson & Johnson 1960-1980")
+res_te <- correlograma(datos_te)
+g_te | res_te$grafico
+
+Tn_te <- nrow(datos_te)
+lb_serie_te <- ljung_box(res_te$r_h, T = res_te$n, m = res_te$m, p = 0)
+```
+
+### Ajuste y tabla de coeficientes
+
+```{r}
+n_valid_te <- min(12, floor(0.2 * Tn_te))
+n_estim_te <- Tn_te - n_valid_te
+
+y_estim_te <- datos_te$y[1:n_estim_te]
+y_valid_te <- datos_te$y[(n_estim_te + 1):Tn_te]
+
+m_te        <- ajustar_tendencia(y_estim_te, tipo = "exponencial", corregir_sesgo = TRUE)
+pron_te     <- m_te$pronosticar(n_valid_te)
+e_valid_te  <- y_valid_te - pron_te
+
+tabla_bonita(m_te$parametros$tabla,
+             col.names = c("Término", "Estimación", "EE ordinario", "EE robusto (HAC)", "t (HAC)", "Valor p (HAC)"))
+m_te$parametros$beta0
+m_te$parametros$beta1
+m_te$parametros$R2
+```
+
+### Revisión de supuestos
+
+```{r}
+e_estim_te <- y_estim_te - m_te$yhat
+val_te <- validar_errores(e_estim_te, p = 2)
+val_te$grafico_tiempo | val_te$correlograma$grafico
+
+t_test_te <- val_te$prueba_t_media_cero
+lb_te     <- val_te$ljung_box
+jb_te     <- val_te$jarque_bera
+
+tabla_pruebas_te <- tibble::tibble(
+  Prueba        = c("t (media cero)", "Ljung-Box", "Jarque-Bera"),
+  Estadistico   = c(fnum(t_test_te$statistic), fnum(lb_te$estadistico), fnum(jb_te$estadistico)),
+  gl            = c(as.character(t_test_te$parameter), lb_te$gl, jb_te$gl),
+  Valor_critico = c(fnum(qt(0.975, t_test_te$parameter)), fnum(lb_te$valor_critico), fnum(jb_te$valor_critico)),
+  Valor_p       = c(fp(t_test_te$p.value), fp(lb_te$valor_p), fp(jb_te$valor_p)),
+  Decision      = c(
+    if (t_test_te$p.value < 0.05) "se rechaza" else "no se rechaza",
+    if (lb_te$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    if (jb_te$valor_p < 0.05) "se rechaza" else "no se rechaza"
+  )
+)
+tabla_bonita(tabla_pruebas_te,
+             col.names = c("Prueba", "Estadístico", "gl", "Valor crítico (5%)", "Valor p", "Decisión"))
+m_te$parametros$dw
+```
+
+### Medidas/Referente
+
+```{r}
+med_te <- medidas(e = e_valid_te, y = y_valid_te, y_entrenamiento = y_estim_te, s = 1)
+
+pron_ingenuo_te    <- rep(y_estim_te[n_estim_te], n_valid_te)
+e_valid_ingenuo_te <- y_valid_te - pron_ingenuo_te
+med_ingenuo_te <- medidas(e = e_valid_ingenuo_te, y = y_valid_te, y_entrenamiento = y_estim_te, s = 1)
+
+tabla_comparacion_te <- tibble::tibble(
+  Método = c("Tendencia exponencial", "Ingenuo simple"),
+  MSE    = round(c(med_te$MSE,  med_ingenuo_te$MSE), 3),
+  MAD    = round(c(med_te$MAD,  med_ingenuo_te$MAD), 3),
+  MAPE   = round(c(med_te$MAPE, med_ingenuo_te$MAPE), 2),
+  MASE   = round(c(med_te$MASE, med_ingenuo_te$MASE), 3)
+)
+tabla_bonita(tabla_comparacion_te)
+```
+
+### Conclusión/Recomendación
+:::
+
+## Holt lineal
+
+::: {.panel-tabset}
+### Descripción/Patrón
+
+```{r}
+datos_holt <- leer_serie(austres, fuente = "austres, paquete datasets de R", unidad = "miles de residentes en Australia")
+g_holt <- graficar_serie(datos_holt, "Poblacion residente en Australia, 1971-1993")
+res_holt <- correlograma(datos_holt)
+g_holt | res_holt$grafico
+
+Tn_holt <- nrow(datos_holt)
+lb_serie_holt <- ljung_box(res_holt$r_h, T = res_holt$n, m = res_holt$m, p = 0)
+```
+
+### Partición y ajuste (con optimizar)
+
+```{r}
+n_valid_holt <- min(12, floor(0.2 * Tn_holt))
+n_estim_holt <- Tn_holt - n_valid_holt
+
+y_estim_holt <- datos_holt$y[1:n_estim_holt]
+y_valid_holt <- datos_holt$y[(n_estim_holt + 1):Tn_holt]
+
+rejilla_holt <- expand.grid(alpha = seq(0.05, 0.95, by = 0.05),
+                             beta  = seq(0.05, 0.95, by = 0.05))
+opt_holt <- optimizar(y_estim_holt, metodo = "holt", rejilla = rejilla_holt)
+
+ajuste_holt  <- ajustar_holt(y_estim_holt, alpha = opt_holt$optimo$alpha, beta = opt_holt$optimo$beta)
+pron_holt    <- ajuste_holt$pronosticar(n_valid_holt)
+e_valid_holt <- y_valid_holt - pron_holt
+
+tabla_valid_holt <- tibble::tibble(
+  h              = 1:n_valid_holt,
+  fecha          = datos_holt$fecha[(n_estim_holt + 1):Tn_holt],
+  y_real         = y_valid_holt,
+  y_pronosticado = round(pron_holt, 2),
+  error          = round(e_valid_holt, 2)
+)
+tabla_bonita(tabla_valid_holt)
+opt_holt$optimo
+opt_holt$en_borde
+```
+
+### Medidas/Referente
+
+```{r}
+med_holt <- medidas(e = e_valid_holt, y = y_valid_holt, y_entrenamiento = y_estim_holt, s = 1)
+
+pron_ingenuo_holt    <- rep(y_estim_holt[n_estim_holt], n_valid_holt)
+e_valid_ingenuo_holt <- y_valid_holt - pron_ingenuo_holt
+med_ingenuo_holt <- medidas(e = e_valid_ingenuo_holt, y = y_valid_holt, y_entrenamiento = y_estim_holt, s = 1)
+
+tabla_comparacion_holt <- tibble::tibble(
+  Método = c("Holt lineal", "Ingenuo simple"),
+  MSE    = round(c(med_holt$MSE,  med_ingenuo_holt$MSE), 3),
+  MAD    = round(c(med_holt$MAD,  med_ingenuo_holt$MAD), 3),
+  MAPE   = round(c(med_holt$MAPE, med_ingenuo_holt$MAPE), 2),
+  MASE   = round(c(med_holt$MASE, med_ingenuo_holt$MASE), 3)
+)
+tabla_bonita(tabla_comparacion_holt)
+```
+
+### Validación de errores
+
+```{r}
+e_estim_holt <- na.omit(y_estim_holt - ajuste_holt$yhat)
+val_holt <- validar_errores(e_estim_holt, p = 2)
+val_holt$grafico_tiempo | val_holt$correlograma$grafico
+
+t_test_holt <- val_holt$prueba_t_media_cero
+lb_holt     <- val_holt$ljung_box
+jb_holt     <- val_holt$jarque_bera
+dw_holt     <- val_holt$durbin_watson
+
+tabla_pruebas_holt <- tibble::tibble(
+  Prueba        = c("t (media cero)", "Ljung-Box", "Jarque-Bera", "Durbin-Watson"),
+  Estadistico   = c(fnum(t_test_holt$statistic), fnum(lb_holt$estadistico), fnum(jb_holt$estadistico), fnum(dw_holt$estadistico)),
+  gl            = c(as.character(t_test_holt$parameter), lb_holt$gl, jb_holt$gl, "—"),
+  Valor_critico = c(fnum(qt(0.975, t_test_holt$parameter)), fnum(lb_holt$valor_critico), fnum(jb_holt$valor_critico), "—"),
+  Valor_p       = c(fp(t_test_holt$p.value), fp(lb_holt$valor_p), fp(jb_holt$valor_p), "—"),
+  Decision      = c(
+    if (t_test_holt$p.value < 0.05) "se rechaza" else "no se rechaza",
+    if (lb_holt$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    if (jb_holt$valor_p < 0.05) "se rechaza" else "no se rechaza",
+    "referencia visual (sin cotas dL/dU tabuladas aquí)"
+  )
+)
+tabla_bonita(tabla_pruebas_holt,
+             col.names = c("Prueba", "Estadístico", "gl", "Valor crítico (5%)", "Valor p", "Decisión"))
+```
+
+### Conclusión/Recomendación
+:::
+
+## Contraejemplo
+
+::: {.panel-tabset}
+### Descripción y patrón (que contradice el método)
+### Ajuste
+### Medidas y referente
+### Validación de errores 
+### Qué muestra el fallo
+:::
+
+::::
